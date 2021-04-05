@@ -1,5 +1,298 @@
 <html>
+    <head>
+        <title>Async Sync Simulator</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" type="image/png" href="favicon.png">
+		<link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans+JP" />
+		<style type="text/css">
+			* {
+				font-family: 'Noto Sans JP';
+			}
+			.pure-menu {
+				padding: 15px 10px;
+			}
+			.pure-menu a {
+				color: white;
+			}
+			footer {
+				border-top: 1px solid gray;
+				padding: 30px 15px;
+				color: white;
+				background-color: #1e0d33;
+			}
+			footer a {
+				color: white;
+			}
+			.caja-microservicio {
+			    padding-left: 10px;
+			    padding-right: 10px;
+			    padding-top: 18px;
+			    padding-bottom: 45px;
+			    height: 300px;
+			    background-color: rgba(255, 195, 123, 0.8);
+			    color: white;
+			    margin-left: 5px;
+			    margin-right: 40px;
+                border-radius: 10px
+			}
+			.caja-microservicio .titulo {
+			    background-color: #352121;
+			    border-top-right-radius: 10px;
+			    border-bottom-right-radius: 10px;
+			    padding: 10px;
+			}
+			.caja-microservicio #btn-generar-mensaje {
+			    position: relative;
+                top: 120px;
+                left: 5px;
+			}
+			.caja-microservicio .mensaje {
+		        position: relative;
+                top: 10px;
+                color: black;
+                display: block;
+                background-color: indianred;
+                padding: 5px;
+			}
+			.caja-microservicio .mensaje-procesado {
+			    background-color: green;
+			}
+			.caja-microservicio .contenedor-mensajes {
+			    overflow-y: auto;
+                min-height: 100%;
+			}
+		</style>
+		<script src='https://cdn.jsdelivr.net/npm/big.js@6.0.0/big.min.js'></script>
+		<script src="anime.min.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			window.onload = function() {
+			    // Variables.
+			    var cantidadMensajesGenerados = 0;
+			    var cantidadMensajesProcesados = 0;
+			    
+                // Funciones.
+                function animarMensaje(mensajeDOM, duracionMS) {
+			        anime({
+                        targets: mensajeDOM,
+                        translateY: 250,
+                        easing: 'easeInOutSine',
+                        duration: duracionMS
+                    });
+                }
+                
+                function animarMensajeProcesadoCompletamente(mensajeDOM) {
+                    mensajeDOM.classList.add("mensaje-procesado");
+                }
+                
+                function agregarMensajeATabla(mensaje, tiempo) {
+                    var tblMensajesProcesadosDOM = document.querySelectorAll("#tbl-mensajes-procesados tbody")[0];
+                    if (cantidadMensajesProcesados == 0) {
+                        tblMensajesProcesadosDOM.innerHTML = "";
+                    }
+                    cantidadMensajesProcesados++;
+                    var trDOM = document.createElement("tr");
+                    var tdMensajeDOM = document.createElement("td");
+                    tdMensajeDOM.textContent = mensaje;
+                    var tdTiempoDOM = document.createElement("td");
+                    tdTiempoDOM.textContent = tiempo + " ms";
+                    trDOM.append(tdMensajeDOM);
+                    trDOM.append(tdTiempoDOM);
+                    tblMensajesProcesadosDOM.append(trDOM);
+                }
+                
+                // Clases.
+                function Orquestador() {
+                    var instancia = this;
+                    var contenedorMensajesMicroservicio1DOM = document.querySelectorAll("#microservicio-1 .contenedor-mensajes")[0];
+                    var contenedorMensajesMicroservicio2DOM = document.querySelectorAll("#microservicio-2 .contenedor-mensajes")[0];
+                    var contenedorMensajesMicroservicio3DOM = document.querySelectorAll("#microservicio-3 .contenedor-mensajes")[0];
 
+                    instancia.microservicio3 = new Microservicio(contenedorMensajesMicroservicio3DOM, null, 6000);
+                    instancia.microservicio2 = new Microservicio(contenedorMensajesMicroservicio2DOM, instancia.microservicio3, 4000);
+                    instancia.microservicio1 = new Microservicio(contenedorMensajesMicroservicio1DOM, instancia.microservicio2, 2000);
+                    
+                    setInterval(function() {
+                        var mensajesDOM = document.querySelectorAll(".contenedor-mensajes .mensaje:not(.mensaje-procesado)");
+                        for (var i = 0; i < mensajesDOM.length; i++) {
+                            var mensajeDOM = mensajesDOM[i];
+                            var tiempo = mensajeDOM.getAttribute("data-tiempo");
+                            if (tiempo === null || isNaN(tiempo)) {
+                                tiempo = 0;
+                            }
+                            tiempo = parseFloat(tiempo);
+                            tiempo += 200;
+                            mensajeDOM.setAttribute("data-tiempo", tiempo);
+                            var textoAnterior = mensajeDOM.textContent;
+                            var partes = textoAnterior.split("|");
+                            if (partes.length >= 1) {
+                                mensajeDOM.textContent = partes[0] + " | " + tiempo + " ms";
+                            } else {
+                                mensajeDOM.textContent = tiempo + " ms";
+                            }
+                        }
+                    }, 200);
 
+                    instancia.ejecutar = function() {
+                        instancia.microservicio1.agregarMensaje("Mensaje " + cantidadMensajesGenerados, 0);
+                        instancia.microservicio1.ejecutar();
+                    };
+                }
+                
+                function Microservicio(contenedorMensajesDOM, proximoMicroservicio, tiempoEjecucionMS) {
+                    var instancia = this;
+                    instancia.mensajes = [];
+                    instancia.mensajesDOM = [];
+                    instancia.ejecutando = false;
+                    instancia.contenedorMensajesDOM = contenedorMensajesDOM;
+                    instancia.proximoMicroservicio = proximoMicroservicio;
+                    instancia.tiempoEjecucionMS = tiempoEjecucionMS;
+                    
+                    instancia.agregarMensaje = function(mensaje, tiempoProcesandose) {
+                        instancia.mensajes.push(mensaje);
+                        var mensajeDOM = document.createElement("span");
+                        mensajeDOM.textContent = mensaje;
+                        mensajeDOM.classList = "mensaje";
+                        mensajeDOM.setAttribute("data-tiempo", tiempoProcesandose);
+                        instancia.mensajesDOM.push(mensajeDOM);
+                        instancia.contenedorMensajesDOM.prepend(mensajeDOM);
+                    };
+                    
+                    instancia.ejecutar = function() {
+                        console.log(instancia.ejecutando);
+                        if (!instancia.ejecutando) {
+                            if (instancia.mensajes.length > 0) {
+                                instancia.ejecutando = true;
+                                var mensaje = instancia.mensajes[0];
+                                var mensajeDOM = instancia.mensajesDOM[0];
+                                instancia.mensajes.splice(0, 1);
+                                instancia.mensajesDOM.splice(0, 1);
+                                animarMensaje(mensajeDOM, instancia.tiempoEjecucionMS);
+                                setTimeout(function() {
+                                    if (instancia.proximoMicroservicio != null) {
+                                        var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                        instancia.proximoMicroservicio.agregarMensaje(mensaje, tiempoProcesandose);
+                                        mensajeDOM.remove();
+                                        instancia.proximoMicroservicio.ejecutar();
+                                        instancia.ejecutando = false;
+                                        instancia.ejecutar();
+                                    } else {
+                                        var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                        animarMensajeProcesadoCompletamente(mensajeDOM);
+                                        agregarMensajeATabla(mensaje, tiempoProcesandose);
+                                        instancia.ejecutando = false;
+                                        instancia.ejecutar();
+                                    }
+                                }, instancia.tiempoEjecucionMS);
+                            }
+                        }
+                    };
+                }
+                
+                // Eventos.
+				var btnGenerarMensaje = document.getElementById("btn-generar-mensaje");
+				btnGenerarMensaje.addEventListener("click", function() {
+                    cantidadMensajesGenerados++;
+                    orquestador.ejecutar();
+                    btnGenerarMensaje.setAttribute("disabled", true);
+                    setTimeout(function() {
+                        btnGenerarMensaje.removeAttribute("disabled");
+                    }, 250);
+				});
+				
+				// Setup.
+				var orquestador = new Orquestador();
+			}
+		</script>
+    </head>
+    <body>
+        <div class="pure-menu pure-menu-horizontal" style="background-color: #1e0d33; height: 100px">
+			<img src="cohete.svg" style="width: 70px; vertical-align: middle" />
+			<span style="font-family: Comfortaa; color: white">Async Sync Simulator</span>
+		</div>
+		
+		<div style="padding: 20px 20px">
+		    <p>
+	            El siguiente simulador pretende que interpretes la importancia de la eficiencia del asincronismo frente al sincronismo. El simulador se compone de un generador de mensajes (llamado "Generador de solicitudes") con el cual podrás enviar mensajes que se van a procesar por los microservicios. Cada microservicio se compone de un solo worker. Esto implica que cada microservicio podrá procesar un solo mensaje a la vez.
+	        </p>
+	        <p>
+	            Para que un mensaje se considere procesado completamente se requiere que el mismo se procese completamente por los 3 microservicios, es decir, primero debe ser procesado por el microservicio 1, una vez terminado éste, debe pasar al siguiente y así hasta el microservicio 3.
+	        </p>
+	    </div>
+		
+		<div>
+		    <input id="chk-simulacion-asincronica" type="checkbox" checked="checked" />
+		    <label for="chk-simulacion-asincronica">La simulación será asincrónica.</label>
+		</div>
+		
+		<div style="padding: 60px 10px">
+		    <div style="display: flex">
+		        <div class="caja-microservicio">
+		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
+		                <img src="settings.png" width="32" style="vertical-align: middle" />
+		                <span class="titulo">
+		                    Generador de solicitudes
+	                    </span>
+                    </div>
+                    
+                    <button id="btn-generar-mensaje" class="pure-button pure-button-primary" type="button" >Enviar mensaje a procesar</button>
+	            </div>
+		        <div class="caja-microservicio" id="microservicio-1">
+		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
+		                <img src="settings.png" width="32" style="vertical-align: middle" />
+	                    <span class="titulo">
+	                        Microservicio 1
+                        </span>
+                    </div>
+                    <div class="contenedor-mensajes"></div>
+                </div>
+		        <div class="caja-microservicio" id="microservicio-2">
+		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
+		                <img src="settings.png" width="32" style="vertical-align: middle" />
+	                    <span class="titulo">
+	                        Microservicio 2
+                        </span>
+                    </div>
+                    <div class="contenedor-mensajes"></div>
+	            </div>
+		        <div class="caja-microservicio" id="microservicio-3">
+		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
+    		            <img src="settings.png" width="32" style="vertical-align: middle" />
+	                    <span class="titulo">
+	                        Microservicio 3
+                        </span>
+                    </div>
+                    <div class="contenedor-mensajes"></div>
+	            </div>
+		    </div>
+		    
+		    <div style="margin-top: 70px; margin-left: 40%;">
+    		    <table class="pure-table" id="tbl-mensajes-procesados">
+                    <thead>
+                        <tr>
+                            <th>Mensaje</th>
+                            <th>Tiempo para procesar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="2">No hay mensajes procesados.</td>
+                        </tr>
+                    </tbody>
+                </table>
+		    </div>
+		</div>
+		
+		<footer>
+			<div style="text-align: right; font-family: 'Comfortaa'; margin-bottom: 5px;">
+				Powered by Pabex Academy
+			</div>
 
+			<div style="text-align: right; font-family: 'Comfortaa';">
+				Los íconos fueron extraídos desde <a href="https://www.flaticon.com/" title="Flaticon" rel="noopener" target="_blank">www.flaticon.com</a>
+			</div>
+		</footer>
+    </body>
 </html>
