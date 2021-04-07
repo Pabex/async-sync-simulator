@@ -285,6 +285,16 @@
 				    setTiempoMicroservicio(orquestador.microservicio3, txtTiempoMicroservicio3);
 				});
 				
+				var btnEmpezarSimulacion = document.getElementById("btn-empezar-simulacion");
+				btnEmpezarSimulacion.addEventListener("click", function() {
+				    btnGenerarMensaje.removeAttribute("disabled");
+				    this.setAttribute("disabled", "disabled");
+				    
+				    var chkSimulacionAsincronica = document.getElementById("chk-simulacion-asincronica");
+				    asincronico = chkSimulacionAsincronica.checked;
+			        chkSimulacionAsincronica.setAttribute("disabled", "disabled");
+				});
+				
 				// Setup.
 				var orquestador = new Orquestador();
 			}
@@ -308,10 +318,10 @@
 		<div style="padding: 10px 20px">
 		    <input id="chk-simulacion-asincronica" type="checkbox" checked="checked" />
 		    <label for="chk-simulacion-asincronica">La simulación será asincrónica.</label>
-		    <button type="button" class="pure-button pure-button-primary">Empezar simulación</button>
+		    <button id="btn-empezar-simulacion" type="button" class="pure-button pure-button-primary">Empezar simulación</button>
 		</div>
 		
-		<div style="padding: 60px 10px;">
+		<div style="position: relative; margin: 20px">
 		    <div style="display: flex; align-items: center; justify-content: center;">
 		        <div class="caja-microservicio">
 		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
@@ -320,7 +330,7 @@
 	                    </span>
                     </div>
                     
-                    <button id="btn-generar-mensaje" class="pure-button pure-button-primary" type="button" >Enviar mensaje a procesar</button>
+                    <button id="btn-generar-mensaje" class="pure-button pure-button-primary" type="button" disabled="disabled">Enviar mensaje a procesar</button>
 	            </div>
 		        <div class="caja-microservicio" id="microservicio-1">
 		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
