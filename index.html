@@ -30,9 +30,8 @@
 			    padding-left: 10px;
 			    padding-right: 10px;
 			    padding-top: 18px;
-			    padding-bottom: 45px;
-			    height: 300px;
-			    background-color: rgba(255, 195, 123, 0.8);
+			    height: 400px;
+			    background-color: #72d081cc;
 			    color: white;
 			    margin-left: 5px;
 			    margin-right: 40px;
@@ -47,7 +46,6 @@
 			.caja-microservicio #btn-generar-mensaje {
 			    position: relative;
                 top: 120px;
-                left: 5px;
 			}
 			.caja-microservicio .mensaje {
 		        position: relative;
@@ -62,7 +60,12 @@
 			}
 			.caja-microservicio .contenedor-mensajes {
 			    overflow-y: auto;
-                min-height: 100%;
+                height: 190px;
+                border: 1px solid black;
+			}
+			.caja-microservicio .contenedor-worker {
+			    height: 40px;
+                border: 1px solid black;
 			}
 		</style>
 		<script src='https://cdn.jsdelivr.net/npm/big.js@6.0.0/big.min.js'></script>
@@ -72,19 +75,19 @@
 			    // Variables.
 			    var cantidadMensajesGenerados = 0;
 			    var cantidadMensajesProcesados = 0;
+			    var tiempoMicroservicio1 = 2000;
+			    var tiempoMicroservicio2 = 4000;
+			    var tiempoMicroservicio3 = 6000;
+			    var asincronico = true;
 			    
                 // Funciones.
-                function animarMensaje(mensajeDOM, duracionMS) {
-			        anime({
-                        targets: mensajeDOM,
-                        translateY: 250,
-                        easing: 'easeInOutSine',
-                        duration: duracionMS
-                    });
+                function animarMensaje(mensajeDOM, duracionMS, contenedorWorkerDOM) {
+                    contenedorWorkerDOM.append(mensajeDOM);
                 }
                 
                 function animarMensajeProcesadoCompletamente(mensajeDOM) {
-                    mensajeDOM.classList.add("mensaje-procesado");
+                    //mensajeDOM.classList.add("mensaje-procesado");
+                    mensajeDOM.remove();
                 }
                 
                 function agregarMensajeATabla(mensaje, tiempo) {
@@ -106,16 +109,25 @@
                 // Clases.
                 function Orquestador() {
                     var instancia = this;
+                    
+                    var contenedorMicroservicio1 = document.getElementById("microservicio-1");
+                    var contenedorMicroservicio2 = document.getElementById("microservicio-2");
+                    var contenedorMicroservicio3 = document.getElementById("microservicio-3");
+                    
                     var contenedorMensajesMicroservicio1DOM = document.querySelectorAll("#microservicio-1 .contenedor-mensajes")[0];
                     var contenedorMensajesMicroservicio2DOM = document.querySelectorAll("#microservicio-2 .contenedor-mensajes")[0];
                     var contenedorMensajesMicroservicio3DOM = document.querySelectorAll("#microservicio-3 .contenedor-mensajes")[0];
+                    
+                    var contenedorWorker1DOM = document.querySelectorAll("#microservicio-1 .contenedor-worker")[0];
+                    var contenedorWorker2DOM = document.querySelectorAll("#microservicio-2 .contenedor-worker")[0];
+                    var contenedorWorker3DOM = document.querySelectorAll("#microservicio-3 .contenedor-worker")[0];
 
-                    instancia.microservicio3 = new Microservicio(contenedorMensajesMicroservicio3DOM, null, 6000);
-                    instancia.microservicio2 = new Microservicio(contenedorMensajesMicroservicio2DOM, instancia.microservicio3, 4000);
-                    instancia.microservicio1 = new Microservicio(contenedorMensajesMicroservicio1DOM, instancia.microservicio2, 2000);
+                    instancia.microservicio3 = new Microservicio(contenedorMensajesMicroservicio3DOM, contenedorWorker3DOM, null, tiempoMicroservicio3);
+                    instancia.microservicio2 = new Microservicio(contenedorMensajesMicroservicio2DOM, contenedorWorker2DOM, instancia.microservicio3, tiempoMicroservicio2);
+                    instancia.microservicio1 = new Microservicio(contenedorMensajesMicroservicio1DOM, contenedorWorker1DOM, instancia.microservicio2, tiempoMicroservicio1);
                     
                     setInterval(function() {
-                        var mensajesDOM = document.querySelectorAll(".contenedor-mensajes .mensaje:not(.mensaje-procesado)");
+                        var mensajesDOM = document.querySelectorAll(".caja-microservicio .mensaje:not(.mensaje-procesado)");
                         for (var i = 0; i < mensajesDOM.length; i++) {
                             var mensajeDOM = mensajesDOM[i];
                             var tiempo = mensajeDOM.getAttribute("data-tiempo");
@@ -133,6 +145,22 @@
                                 mensajeDOM.textContent = tiempo + " ms";
                             }
                         }
+                        
+                        if (instancia.microservicio1.ejecutando) {
+                            contenedorMicroservicio1.style.backgroundColor = "#e06161cc";
+                        } else {
+                            contenedorMicroservicio1.style.backgroundColor = "#72d081cc";
+                        }
+                        if (instancia.microservicio2.ejecutando) {
+                            contenedorMicroservicio2.style.backgroundColor = "#e06161cc";
+                        } else {
+                            contenedorMicroservicio2.style.backgroundColor = "#72d081cc";
+                        }
+                        if (instancia.microservicio3.ejecutando) {
+                            contenedorMicroservicio3.style.backgroundColor = "#e06161cc";
+                        } else {
+                            contenedorMicroservicio3.style.backgroundColor = "#72d081cc";
+                        }
                     }, 200);
 
                     instancia.ejecutar = function() {
@@ -141,16 +169,18 @@
                     };
                 }
                 
-                function Microservicio(contenedorMensajesDOM, proximoMicroservicio, tiempoEjecucionMS) {
+                function Microservicio(contenedorMensajesDOM, contenedorWorkerDOM, proximoMicroservicio, tiempoEjecucionMS) {
                     var instancia = this;
                     instancia.mensajes = [];
                     instancia.mensajesDOM = [];
                     instancia.ejecutando = false;
                     instancia.contenedorMensajesDOM = contenedorMensajesDOM;
+                    instancia.contenedorWorkerDOM = contenedorWorkerDOM;
                     instancia.proximoMicroservicio = proximoMicroservicio;
                     instancia.tiempoEjecucionMS = tiempoEjecucionMS;
                     
                     instancia.agregarMensaje = function(mensaje, tiempoProcesandose) {
+                        console.log(instancia.tiempoEjecucionMS);
                         instancia.mensajes.push(mensaje);
                         var mensajeDOM = document.createElement("span");
                         mensajeDOM.textContent = mensaje;
@@ -169,26 +199,64 @@
                                 var mensajeDOM = instancia.mensajesDOM[0];
                                 instancia.mensajes.splice(0, 1);
                                 instancia.mensajesDOM.splice(0, 1);
-                                animarMensaje(mensajeDOM, instancia.tiempoEjecucionMS);
-                                setTimeout(function() {
-                                    if (instancia.proximoMicroservicio != null) {
-                                        var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
-                                        instancia.proximoMicroservicio.agregarMensaje(mensaje, tiempoProcesandose);
-                                        mensajeDOM.remove();
-                                        instancia.proximoMicroservicio.ejecutar();
-                                        instancia.ejecutando = false;
-                                        instancia.ejecutar();
-                                    } else {
-                                        var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
-                                        animarMensajeProcesadoCompletamente(mensajeDOM);
-                                        agregarMensajeATabla(mensaje, tiempoProcesandose);
-                                        instancia.ejecutando = false;
-                                        instancia.ejecutar();
-                                    }
-                                }, instancia.tiempoEjecucionMS);
+                                animarMensaje(mensajeDOM, instancia.tiempoEjecucionMS, instancia.contenedorWorkerDOM);
+                                
+                                if (asincronico){
+                                    setTimeout(function() {
+                                        if (instancia.proximoMicroservicio != null) {
+                                            var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                            instancia.proximoMicroservicio.agregarMensaje(mensaje, tiempoProcesandose);
+                                            mensajeDOM.remove();
+                                            instancia.proximoMicroservicio.ejecutar();
+                                            instancia.ejecutando = false;
+                                            instancia.ejecutar();
+                                        } else {
+                                            var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                            animarMensajeProcesadoCompletamente(mensajeDOM);
+                                            agregarMensajeATabla(mensaje, tiempoProcesandose);
+                                            instancia.ejecutando = false;
+                                            instancia.ejecutar();
+                                        }
+                                    }, instancia.tiempoEjecucionMS);
+                                } else {
+                                    setTimeout(function() {
+                                        if (instancia.proximoMicroservicio != null) {
+                                            var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                            instancia.proximoMicroservicio.agregarMensaje(mensaje, tiempoProcesandose);
+                                            instancia.proximoMicroservicio.ejecutar();
+                                            // Esperar a los próximos microservicios.
+                                            var idIntervalo = setInterval(function() {
+                                                if (!instancia.proximoMicroservicio.ejecutando) {
+                                                    clearInterval(idIntervalo);
+                                                    mensajeDOM.remove();
+                                                    instancia.ejecutando = false;
+                                                    instancia.ejecutar();
+                                                }
+                                            }, 150);
+                                        } else {
+                                            var tiempoProcesandose = mensajeDOM.getAttribute("data-tiempo");
+                                            animarMensajeProcesadoCompletamente(mensajeDOM);
+                                            agregarMensajeATabla(mensaje, tiempoProcesandose);
+                                            instancia.ejecutando = false;
+                                            instancia.ejecutar();
+                                        }
+                                    }, instancia.tiempoEjecucionMS);
+                                }
                             }
                         }
                     };
+                }
+                
+                function setTiempoMicroservicio(microservicio, txtTiempoMicroservicio) {
+                    var valor = txtTiempoMicroservicio.value;
+				    if (valor < 1) {
+				        valor = 1;
+				    }
+				    if (valor > 20) {
+				        valor = 20;
+				    }
+				    microservicio.tiempoEjecucionMS = valor * 1000;
+				    txtTiempoMicroservicio.value = valor;
                 }
                 
                 // Eventos.
@@ -200,6 +268,21 @@
                     setTimeout(function() {
                         btnGenerarMensaje.removeAttribute("disabled");
                     }, 250);
+				});
+				
+				var txtTiempoMicroservicio1 = document.getElementById("txt-tiempo-microservicio-1");
+				txtTiempoMicroservicio1.addEventListener("change", function() {
+				    setTiempoMicroservicio(orquestador.microservicio1, txtTiempoMicroservicio1);
+				});
+				
+				var txtTiempoMicroservicio2 = document.getElementById("txt-tiempo-microservicio-2");
+				txtTiempoMicroservicio2.addEventListener("change", function() {
+				    setTiempoMicroservicio(orquestador.microservicio2, txtTiempoMicroservicio2);
+				});
+				
+				var txtTiempoMicroservicio3 = document.getElementById("txt-tiempo-microservicio-3");
+				txtTiempoMicroservicio3.addEventListener("change", function() {
+				    setTiempoMicroservicio(orquestador.microservicio3, txtTiempoMicroservicio3);
 				});
 				
 				// Setup.
@@ -222,17 +305,17 @@
 	        </p>
 	    </div>
 		
-		<div>
+		<div style="padding: 10px 20px">
 		    <input id="chk-simulacion-asincronica" type="checkbox" checked="checked" />
 		    <label for="chk-simulacion-asincronica">La simulación será asincrónica.</label>
+		    <button type="button" class="pure-button pure-button-primary">Empezar simulación</button>
 		</div>
 		
-		<div style="padding: 60px 10px">
-		    <div style="display: flex">
+		<div style="padding: 60px 10px;">
+		    <div style="display: flex; align-items: center; justify-content: center;">
 		        <div class="caja-microservicio">
 		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
-		                <img src="settings.png" width="32" style="vertical-align: middle" />
-		                <span class="titulo">
+		                <span style="color: black">
 		                    Generador de solicitudes
 	                    </span>
                     </div>
@@ -245,8 +328,18 @@
 	                    <span class="titulo">
 	                        Microservicio 1
                         </span>
+                        <br>
+                        <form class="pure-form" style="margin-bottom: 0px; margin-top: 5px">
+                            <fieldset style="padding-bottom: 0px">
+                                <label style="font-size: 12px; color: black;">Tiempo en seg</label>
+                                <input id="txt-tiempo-microservicio-1" type="number" value="2" style="max-width: 50px; padding: 5px;"/>
+                            </fieldset>
+                        </form>
                     </div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">En cola</p>
                     <div class="contenedor-mensajes"></div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">Worker</p>
+                    <div class="contenedor-worker"></div>
                 </div>
 		        <div class="caja-microservicio" id="microservicio-2">
 		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
@@ -254,8 +347,18 @@
 	                    <span class="titulo">
 	                        Microservicio 2
                         </span>
+                        <br>
+                        <form class="pure-form" style="margin-bottom: 0px; margin-top: 5px">
+                            <fieldset style="padding-bottom: 0px">
+                                <label style="font-size: 12px; color: black;">Tiempo en seg</label>
+                                <input id="txt-tiempo-microservicio-2" type="number" value="4" style="max-width: 50px; padding: 5px;"/>
+                            </fieldset>
+                        </form>
                     </div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">En cola</p>
                     <div class="contenedor-mensajes"></div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">Worker</p>
+                    <div class="contenedor-worker"></div>
 	            </div>
 		        <div class="caja-microservicio" id="microservicio-3">
 		            <div style="border-bottom: 1px solid black; padding-bottom: 10px">
@@ -263,13 +366,25 @@
 	                    <span class="titulo">
 	                        Microservicio 3
                         </span>
+                        <br>
+                        <form class="pure-form" style="margin-bottom: 0px; margin-top: 5px">
+                            <fieldset style="padding-bottom: 0px">
+                                <label style="font-size: 12px; color: black;">Tiempo en seg</label>
+                                <input id="txt-tiempo-microservicio-3" type="number" value="6" style="max-width: 50px; padding: 5px;"/>
+                            </fieldset>
+                        </form>
                     </div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">En cola</p>
                     <div class="contenedor-mensajes"></div>
+                    <p style="color: black; margin-top: 8px; margin-bottom: 8px">Worker</p>
+                    <div class="contenedor-worker"></div>
 	            </div>
 		    </div>
 		    
-		    <div style="margin-top: 70px; margin-left: 40%;">
-    		    <table class="pure-table" id="tbl-mensajes-procesados">
+		    <h2 style="margin-top: 70px; text-align: center">Mensajes procesados</h2>
+		    
+		    <div>
+    		    <table class="pure-table" id="tbl-mensajes-procesados" style="margin: auto;">
                     <thead>
                         <tr>
                             <th>Mensaje</th>
