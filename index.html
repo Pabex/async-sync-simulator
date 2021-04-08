@@ -302,7 +302,7 @@
     </head>
     <body>
         <div class="pure-menu pure-menu-horizontal" style="background-color: #1e0d33; height: 100px">
-			<img src="cohete.svg" style="width: 70px; vertical-align: middle" />
+			<a href="https://www.pabex.com.ar/academy"><img src="cohete.svg" style="width: 70px; vertical-align: middle" /></a>
 			<span style="font-family: Comfortaa; color: white">Async Sync Simulator</span>
 		</div>
 		
@@ -312,6 +312,9 @@
 	        </p>
 	        <p>
 	            Para que un mensaje se considere procesado completamente se requiere que el mismo se procese completamente por los 3 microservicios, es decir, primero debe ser procesado por el microservicio 1, una vez terminado éste, debe pasar al siguiente y así hasta el microservicio 3.
+	        </p>
+	        <p>
+	            Si eliges simular sincrónicamente, verás que cada worker se queda esperando hasta que el siguiente termine y no puede continuar procesando otro mensaje, a pesar, que está ocioso (solo espera).
 	        </p>
 	    </div>
 		
@@ -412,7 +415,7 @@
 		
 		<footer>
 			<div style="text-align: right; font-family: 'Comfortaa'; margin-bottom: 5px;">
-				Powered by Pabex Academy
+				Powered by <a href="https://www.pabex.com.ar/academy" style="font-family: comfortaa;">Pabex Academy</a>
 			</div>
 
 			<div style="text-align: right; font-family: 'Comfortaa';">
